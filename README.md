@@ -1,8 +1,23 @@
 # All-In-One Kubernetes tools (kubectl, helm, iam-authenticator, eksctl, kubeseal, etc)
 
-kubernetes docker images with necessary tools 
+kubernetes docker images with necessary tools
 
-[![DockerHub Badge](http://dockeri.co/image/alpine/k8s)](https://hub.docker.com/r/alpine/k8s/)
+## How to build the image
+
+The original repo comes with a build.sh to generate the docker image. But as I don't have circleci or actions enables there was no use.  
+To build the image you can use the command below.
+
+```
+docker build --no-cache --build-arg KUBECTL_VERSION=${tag} --build-arg HELM_VERSION=${helm} --build-arg KUSTOMIZE_VERSION=${kustomize_version} -t ${image}:${tag} .
+```
+
+You can run the build command without arguments and it will install the follwing versions:
+
+- HELM_VERSION=3.11.1
+- KUBECTL_VERSION=1.27.0
+- KUSTOMIZE_VERSION=v5.0.1
+- KUBESEAL_VERSION=0.18.1
+- HELMFILE_VERSION=0.152.0
 
 ### Notes
 
@@ -24,21 +39,24 @@ kubernetes docker images with necessary tools
 - [helm-push](https://github.com/chartmuseum/helm-push) (latest commit)
 - [aws-iam-authenticator](https://github.com/kubernetes-sigs/aws-iam-authenticator) (latest version when run the build)
 - [eksctl](https://github.com/weaveworks/eksctl) (latest version when run the build)
-- [awscli v1](https://github.com/aws/aws-cli) (latest version when run the build)
+- [awscli v2](https://github.com/aws/aws-cli) (awscli v2 the image gets bigger due to the awscli v2 issue)
+- [helmfile](https://github.com/roboll/helmfile) (latest version when run the build)
 - [kubeseal](https://github.com/bitnami-labs/sealed-secrets) (latest version when run the build)
 - General tools, such as bash, curl, jq, yq, etc
 
 ### Github Repo
 
-https://github.com/alpine-docker/k8s
+https://github.com/radicaled42/k8s
 
-### build logs
+#### Original
 
-https://app.circleci.com/pipelines/github/alpine-docker/k8s
+- https://github.com/alpine-docker/k8s
 
-### Docker image tags
+### AWS Cli v2 Issue information
 
-https://hub.docker.com/r/alpine/k8s/tags/
+- https://github.com/aws/aws-cli/issues/4685#issuecomment-1441909537
+- https://github.com/kyleknap/aws-cli/blob/source-proposal/proposals/source-install.md#alpine-linux
+- https://stackoverflow.com/questions/60298619/awscli-version-2-on-alpine-linux
 
 # Why we need it
 
