@@ -1,13 +1,37 @@
+FROM python:3.10-alpine as builder
+
+ENV AWSCLI_VERSION=2.11.4
+
+RUN apk add --no-cache \
+    curl \
+    make \
+    cmake \
+    gcc \
+    g++ \
+    libc-dev \
+    libffi-dev \
+    openssl-dev \
+    groff \
+    && echo "HELLO WORLD #########################" \
+    && curl https://awscli.amazonaws.com/awscli-${AWSCLI_VERSION}.tar.gz | tar -xz \
+    && cd awscli-${AWSCLI_VERSION} \
+    && ./configure --prefix=/usr/local/lib/aws-cli/ --with-download-deps \
+    && make \
+    && make install
+
+#----
+
 FROM alpine
 
 ARG ARCH
 
 # Ignore to update versions here
 # docker build --no-cache --build-arg KUBECTL_VERSION=${tag} --build-arg HELM_VERSION=${helm} --build-arg KUSTOMIZE_VERSION=${kustomize_version} -t ${image}:${tag} .
-ARG HELM_VERSION=3.2.1
-ARG KUBECTL_VERSION=1.17.5
-ARG KUSTOMIZE_VERSION=v3.8.1
+ARG HELM_VERSION=3.11.1
+ARG KUBECTL_VERSION=1.27.0
+ARG KUSTOMIZE_VERSION=v5.0.1
 ARG KUBESEAL_VERSION=0.18.1
+ARG HELMFILE_VERSION=0.152.0
 
 # Install helm (latest release)
 # ENV BASE_URL="https://storage.googleapis.com/kubernetes-helm"
@@ -22,12 +46,21 @@ RUN case `uname -m` in \
     echo "export ARCH=$ARCH" > /envfile && \
     cat /envfile
 
+# Install helm
 RUN . /envfile && echo $ARCH && \
     apk add --update --no-cache curl ca-certificates bash git && \
     curl -sL https://get.helm.sh/helm-v${HELM_VERSION}-linux-${ARCH}.tar.gz | tar -xvz && \
     mv linux-${ARCH}/helm /usr/bin/helm && \
     chmod +x /usr/bin/helm && \
     rm -rf linux-${ARCH}
+
+# Install helmfile
+RUN . /envfile && echo $ARCH && \
+    apk add --update --no-cache curl ca-certificates bash git && \
+    curl -sL https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_${ARCH}.tar.gz | tar -xvz && \
+    mv helmfile /usr/bin/helmfile && \
+    chmod +x /usr/bin/helmfile && \
+    rm -rf LICENSE README-zh_CN.md README.md
 
 # add helm-diff
 RUN helm plugin install https://github.com/databus23/helm-diff && rm -rf /tmp/helm-*
@@ -60,13 +93,6 @@ RUN . /envfile && echo $ARCH && \
     mv /tmp/eksctl /usr/bin && \
     chmod +x /usr/bin/eksctl
 
-# Install awscli
-RUN apk add --update --no-cache python3 && \
-    python3 -m ensurepip && \
-    pip3 install --upgrade pip && \
-    pip3 install awscli && \
-    pip3 cache purge
-
 # Install jq
 RUN apk add --update --no-cache jq yq
 
@@ -84,5 +110,16 @@ RUN apk add --update --no-cache gettext
 RUN . /envfile && echo $ARCH && \
     curl -L https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-${ARCH}.tar.gz -o - | tar xz -C /usr/bin/ && \
     chmod +x /usr/bin/kubeseal
+
+# Install awscli
+RUN apk add --update --no-cache groff
+RUN apk add --update --no-cache python3 && \
+    python3 -m ensurepip && \
+    pip3 install --upgrade pip && \
+#    pip3 install --upgrade pip && \
+#    pip3 install awscli && \
+    pip3 cache purge
+COPY --from=builder /usr/local/lib/aws-cli/ /usr/local/lib/aws-cli/
+RUN ln -s /usr/local/lib/aws-cli/bin/aws /usr/bin/aws
 
 WORKDIR /apps
