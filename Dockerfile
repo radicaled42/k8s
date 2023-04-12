@@ -1,3 +1,4 @@
+# Build awscli v2 biaries
 FROM python:3.10-alpine as builder
 
 ENV AWSCLI_VERSION=2.11.4
@@ -12,14 +13,13 @@ RUN apk add --no-cache \
     libffi-dev \
     openssl-dev \
     groff \
-    && echo "HELLO WORLD #########################" \
     && curl https://awscli.amazonaws.com/awscli-${AWSCLI_VERSION}.tar.gz | tar -xz \
     && cd awscli-${AWSCLI_VERSION} \
     && ./configure --prefix=/usr/local/lib/aws-cli/ --with-download-deps \
     && make \
     && make install
 
-#----
+###
 
 FROM alpine
 
